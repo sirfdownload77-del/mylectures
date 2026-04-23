@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Library with Folders & Search</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+      body {
+        background: #f1f5f9;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      /* header */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      h1 {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #1e293b, #3b82f6);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      /* main layout: sidebar + content */
+      .library-layout {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+      /* folder sidebar */
+      .folders-sidebar {
+        flex: 1;
+        min-width: 220px;
+        background: white;
+        border-radius: 24px;
+        padding: 1.2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        height: fit-content;
+      }
+      .folders-sidebar h3 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .folder-list {
+        list-style: none;
+        margin-top: 0.5rem;
+      }
+      .folder-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        margin: 4px 0;
+        border-radius: 40px;
+        cursor: pointer;
+        transition: 0.1s;
+        font-size: 0.9rem;
+      }
+      .folder-item.active {
+        background: #e0f2fe;
+        font-weight: 600;
+        color: #0369a1;
+      }
+      .folder-item:hover:not(.active) {
+        background: #f1f5f9;
+      }
+      .folder-name {
+        flex: 1;
+      }
+      .delete-folder-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0 4px;
+      }
+      .delete-folder-btn:hover {
+        color: #b91c1c;
+      }
+      .add-folder {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .add-folder input {
+        flex: 1;
+        padding: 6px 12px;
+        border-radius: 40px;
+        border: 1px solid #cbd5e1;
+      }
+      .add-folder button {
+        background: #3b82f6;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 40px;
+        color: white;
+        cursor: pointer;
+      }
+      /* main content */
+      .main-content {
+        flex: 4;
+        min-width: 280px;
+      }
+      .upload-card,
+      .search-bar {
+        background: white;
+        border-radius: 24px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+      }
+      .search-bar input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 60px;
+        font-size: 1rem;
+      }
+      .form-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+      }
+      .input-field {
+        flex: 2;
+      }
+      .input-field label {
+        font-size: 0.7rem;
+        font-weight: 600;
+      }
+      .input-field input,
+      .input-field select {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 20px;
+        border: 1px solid #cbd5e1;
+      }
+      .btn-upload {
+        background: #3b82f6;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 40px;
+        color: white;
+        cursor: pointer;
+      }
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+      .video-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      video {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: black;
+      }
+      .card-content {
+        padding: 0.8rem;
+      }
+      .video-title {
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+      }
+      .folder-select {
+        width: 100%;
+        padding: 5px;
+        margin: 8px 0;
+        font-size: 0.75rem;
+        border-radius: 20px;
+      }
+      .btn-delete {
+        background: #fee2e2;
+        border: none;
+        width: 100%;
+        padding: 6px;
+        border-radius: 40px;
+        color: #b91c1c;
+        cursor: pointer;
+        font-size: 0.7rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 24px;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #1e293b;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 40px;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📁 Video Library + Folders</h1>
+      </div>
+
+      <div class="library-layout">
+        <!-- Sidebar: Folders -->
+        <div class="folders-sidebar">
+          <h3>📂 Folders</h3>
+          <ul id="folderList" class="folder-list">
+            <li>Loading...</li>
+          </ul>
+          <div class="add-folder">
+            <input
+              type="text"
+              id="newFolderName"
+              placeholder="New folder name"
+            />
+            <button id="createFolderBtn">+ Create</button>
+          </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+          <div class="upload-card">
+            <div class="form-group">
+              <div class="input-field">
+                <label>Title</label>
+                <input type="text" id="videoTitle" placeholder="Video title" />
+              </div>
+              <div class="input-field">
+                <label>Folder (optional)</label>
+                <select id="uploadFolderSelect"></select>
+              </div>
+              <div class="input-field">
+                <label>File</label>
+                <input type="file" id="videoFile" accept="video/*" />
+              </div>
+              <button id="uploadBtn" class="btn-upload">Upload</button>
+            </div>
+          </div>
+
+          <div class="search-bar">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="🔍 Search videos by title..."
+            />
+          </div>
+
+          <div id="videoGridContainer" class="video-grid">
+            <div class="empty-state">Loading videos...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ========== CONFIG ==========
+      const API_BASE = "http://localhost:5000/api/videos"; // <-- CHANGE TO YOUR BACKEND URL
+      // ============================
+
+      let allVideos = [];
+      let currentFolder = "All Videos";
+      let foldersList = [];
+
+      // DOM elements
+      const videoGrid = document.getElementById("videoGridContainer");
+      const folderListEl = document.getElementById("folderList");
+      const searchInput = document.getElementById("searchInput");
+      const uploadFolderSelect = document.getElementById("uploadFolderSelect");
+      const newFolderNameInput = document.getElementById("newFolderName");
+      const createFolderBtn = document.getElementById("createFolderBtn");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const titleInput = document.getElementById("videoTitle");
+      const fileInput = document.getElementById("videoFile");
+
+      function showToast(msg, isError = false) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerText = msg;
+        if (isError) toast.style.background = "#b91c1c";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+
+      // Fetch videos and folders
+      async function fetchData() {
+        try {
+          const [videosRes, foldersRes] = await Promise.all([
+            fetch(API_BASE),
+            fetch(`${API_BASE}/folders`),
+          ]);
+          if (!videosRes.ok) throw new Error("Failed fetch videos");
+          allVideos = await videosRes.json();
+          if (foldersRes.ok) foldersList = await foldersRes.json();
+          else
+            foldersList = [
+              "All Videos",
+              ...new Set(
+                allVideos
+                  .map((v) => v.folder)
+                  .filter((f) => f && f !== "All Videos"),
+              ),
+            ];
+          if (!foldersList.includes("All Videos"))
+            foldersList.unshift("All Videos");
+          renderFolders();
+          renderVideos();
+          updateUploadFolderSelect();
+        } catch (err) {
+          console.error(err);
+          showToast("Cannot connect to backend. Check API_BASE_URL", true);
+        }
+      }
+
+      function renderFolders() {
+        if (!foldersList.length) {
+          folderListEl.innerHTML = "<li>No folders</li>";
+          return;
+        }
+        const html = foldersList
+          .map(
+            (folder) => `
+      <li class="folder-item ${currentFolder === folder ? "active" : ""}" data-folder="${folder}">
+        <span class="folder-name">📁 ${folder}</span>
+        ${folder !== "All Videos" ? `<button class="delete-folder-btn" data-folder="${folder}">🗑️</button>` : ""}
+      </li>
+    `,
+          )
+          .join("");
+        folderListEl.innerHTML = html;
+        // Attach click events
+        document
+          .querySelectorAll(".folder-item .folder-name, .folder-item.active")
+          .forEach((el) => {
+            const li = el.closest(".folder-item");
+            if (li && li.dataset) {
+              li.addEventListener("click", (e) => {
+                if (e.target.classList.contains("delete-folder-btn")) return;
+                currentFolder = li.dataset.folder;
+                renderFolders();
+                renderVideos();
+              });
+            }
+          });
+        document.querySelectorAll(".delete-folder-btn").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const folder = btn.dataset.folder;
+            if (
+              confirm(
+                `Delete folder "${folder}"? All videos will move to "All Videos".`,
+              )
+            ) {
+              await deleteFolder(folder);
+            }
+          });
+        });
+      }
+
+      async function deleteFolder(folderName) {
+        try {
+          const res = await fetch(
+            `${API_BASE}/folders/${encodeURIComponent(folderName)}`,
+            { method: "DELETE" },
+          );
+          if (!res.ok) throw new Error();
+          showToast(`Folder "${folderName}" deleted`);
+          await fetchData();
+        } catch (err) {
+          showToast("Failed to delete folder", true);
+        }
+      }
+
+      function renderVideos() {
+        const searchTerm = searchInput.value.toLowerCase();
+        let filtered = allVideos.filter((v) => {
+          const matchesFolder =
+            currentFolder === "All Videos" || v.folder === currentFolder;
+          const matchesSearch = v.title.toLowerCase().includes(searchTerm);
+          return matchesFolder && matchesSearch;
+        });
+        if (!filtered.length) {
+          videoGrid.innerHTML = `<div class="empty-state">📭 No videos in this folder.</div>`;
+          return;
+        }
+        const cards = filtered
+          .map(
+            (video) => `
+      <div class="video-card" data-id="${video._id}">
+        <video controls preload="metadata" src="${video.url}"></video>
+        <div class="card-content">
+          <div class="video-title">${escapeHtml(video.title)}</div>
+          <select class="folder-select" data-id="${video._id}">
+            ${foldersList.map((f) => `<option value="${f}" ${video.folder === f ? "selected" : ""}>${f}</option>`).join("")}
+          </select>
+          <button class="btn-delete" data-id="${video._id}">Delete video</button>
+        </div>
+      </div>
+    `,
+          )
+          .join("");
+        videoGrid.innerHTML = cards;
+        // Attach move events
+        document.querySelectorAll(".folder-select").forEach((select) => {
+          select.addEventListener("change", async (e) => {
+            const videoId = select.dataset.id;
+            const newFolder = select.value;
+            await moveVideo(videoId, newFolder);
+          });
+        });
+        document.querySelectorAll(".btn-delete").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
+            if (confirm("Delete video?")) await deleteVideo(id);
+          });
+        });
+      }
+
+      async function moveVideo(videoId, newFolder) {
+        try {
+          const res = await fetch(`${API_BASE}/${videoId}/folder`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder: newFolder }),
+          });
+          if (!res.ok) throw new Error();
+          showToast(`Moved to ${newFolder}`);
+          await fetchData();
+        } catch (err) {
+          showToast("Move failed", true);
+        }
+      }
+
+      async function deleteVideo(id) {
+        try {
+          const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error();
+          showToast("Deleted");
+          await fetchData();
+        } catch (err) {
+          showToast("Delete failed", true);
+        }
+      }
+
+      async function createFolder() {
+        const name = newFolderNameInput.value.trim();
+        if (!name || name === "All Videos")
+          return showToast("Invalid name", true);
+        if (foldersList.includes(name)) return showToast("Folder exists", true);
+        // Create folder just by moving a dummy? Actually we just need to add it to the list.
+        // But folders are created when a video is assigned. So we'll just add to local list and allow upload.
+        if (!foldersList.includes(name)) {
+          foldersList.push(name);
+          renderFolders();
+          updateUploadFolderSelect();
+          showToast(`Folder "${name}" created (add videos to it)`);
+          newFolderNameInput.value = "";
+        }
+      }
+
+      function updateUploadFolderSelect() {
+        uploadFolderSelect.innerHTML = foldersList
+          .map((f) => `<option value="${f}">${f}</option>`)
+          .join("");
+      }
+
+      async function uploadVideo() {
+        const title = titleInput.value.trim();
+        const file = fileInput.files[0];
+        const folder = uploadFolderSelect.value;
+        if (!title) return showToast("Title required", true);
+        if (!file) return showToast("Select video", true);
+        if (file.size > 100 * 1024 * 1024) return showToast("Max 100MB", true);
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("video", file);
+        formData.append("folder", folder);
+        uploadBtn.disabled = true;
+        try {
+          const res = await fetch(`${API_BASE}/upload`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          showToast("Uploaded!");
+          titleInput.value = "";
+          fileInput.value = "";
+          await fetchData();
+        } catch (err) {
+          showToast("Upload failed: " + err.message, true);
+        } finally {
+          uploadBtn.disabled = false;
+        }
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function (m) {
+          if (m === "&") return "&amp;";
+          if (m === "<") return "&lt;";
+          if (m === ">") return "&gt;";
+          return m;
+        });
+      }
+
+      // Event listeners
+      searchInput.addEventListener("input", () => renderVideos());
+      createFolderBtn.addEventListener("click", createFolder);
+      uploadBtn.addEventListener("click", uploadVideo);
+      fetchData();
+    </script>
+  </body>
+</html>
